@@ -1,0 +1,77 @@
+function [] = example(nomeArquivoEntrada, pasta, numBlocosV, numBlocosH)
+ 
+nomeArquivo = nomeArquivoEntrada;
+folder = pasta ;
+dirListing = dir(pasta);
+ 
+arquivo = strcat(nomeArquivo, '.txt');
+fid = fopen(arquivo,'w'); 
+for d = 3:length(dirListing)
+ 
+   if (dirListing(d).isdir == 1)
+  
+       fileName = fullfile(folder,dirListing(d).name);
+       arquivos = dir(fileName);
+       nome = dirListing(d).name ;       
+       % nome é o nome da pasta.
+       % vão precisar usar ele pois o nome da pasta é a classe...  
+           for i = 3 : length(arquivos)
+               if (arquivos(i).isdir == 0)
+                   if(contains(arquivos(i).name, ".bmp") == 1 && contains(arquivos(i).name , ".txt") == 0)
+                  
+                           nomeArquivo = fullfile(fileName,arquivos(i).name) ;
+                           fopen(fileName);
+                           I = imread(nomeArquivo);
+                           %disp(I)
+                          
+                           % Função ou código para contar pixel
+                           geraBlocos(I, fid ,numBlocosV,numBlocosH, nome);
+                           
+                          
+                   end        
+               end
+              
+           end
+           fprintf("Arquivo .txt da classe %c gerado do particionamento de %s", nome, pasta);
+   end
+end
+ 
+fclose ( fid );
+end
+
+
+
+function [] = geraBlocos(I, fid, qtdeFragmentosVerticais, qtdeFragmentosHorizontais, classe)
+[height, width] = size( I );
+height = height / qtdeFragmentosVerticais;
+width  = width  / qtdeFragmentosHorizontais;
+
+for idxSubImagemVertical=0:qtdeFragmentosVerticais-1
+   yInicial = round( idxSubImagemVertical      * height);
+   yFinal   = round((idxSubImagemVertical + 1) * height);
+   for idxSubImagemHorizontal=0:qtdeFragmentosHorizontais-1
+       xInicial = round( idxSubImagemHorizontal      * width);
+       xFinal   = round((idxSubImagemHorizontal + 1) * width);
+       subImagem = imcrop(I, [xInicial yInicial round(xFinal - xInicial) round(yFinal - yInicial)]);
+       [height, width] = size(subImagem);
+
+       % contando pixel branco e preto do quadrante
+       white = 0;
+       black = 0;
+
+       for i = 1 : height
+           for j = 1: width
+               if(subImagem(i, j) == 255)
+                   black = black + 1;
+               else
+                   white = white + 1;
+               end
+           end
+       end
+
+       fprintf(fid, "%d %d ", white, black);
+       
+   end
+end
+fprintf(fid, '%c\n', classe ); % Lembre-se a classe pode ser o nome da pasta [0 - 9]
+end
